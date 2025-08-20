@@ -1,5 +1,7 @@
+#include <_stdlib.h>
 #include <cstdlib>
 #include <iostream>
+#include <ostream>
 #include <string>
 #include <vector>
 using namespace std;
@@ -10,7 +12,7 @@ struct DieToRoll {
   Die die;
   int amount;
 
-  int roll() { return ((double)rand() / RAND_MAX) * (this->die); }
+  int roll() { return ((double)random() / RAND_MAX) * (this->die); }
 
 public:
   DieToRoll(Die die, int amount) {
@@ -81,9 +83,9 @@ string die_to_string(Die die) {
 }
 
 int print_rolls(vector<int> results) {
-  int total;
+  int total = 0;
   cout << "rolls: ";
-  for (auto i{results.begin()}; i != results.end(); ++i) {
+  for (auto i{results.begin()}; i != results.end(); i++) {
     cout << " [" << *i << "] ";
     total += *i;
   }
@@ -92,6 +94,10 @@ int print_rolls(vector<int> results) {
 }
 
 int main(int argc, char *argv[]) {
+  if (argc < 3) {
+    cerr << "too few arguments" << endl;
+    return argc;
+  }
   int total;
   for (int i{1}; i < argc; i += 2) {
     Die die = str_to_die(argv[i]);
