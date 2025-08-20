@@ -1,96 +1,108 @@
-#include <cstddef>
 #include <cstdlib>
-#include <cstdio>
 #include <iostream>
+#include <string>
+#include <vector>
 using namespace std;
 
-const static int MAX_ARGUMENTS = 15;
-const static size_t NUMBER_OF_DICE = 7;
+enum Die { D4 = 4, D6 = 6, D8 = 8, D10 = 10, D12 = 12, D20 = 20, D100 = 100 };
 
-enum DIE_TYPE {
-	DIE4 = 4, DIE6 = 6, DIE8 = 8,  
-	DIE10 = 10, DIE12 = 12, DIE20 = 20, 
-	DIE100 = 100
+struct DieToRoll {
+  Die die;
+  int amount;
+
+  int roll() { return ((double)rand() / RAND_MAX) * (this->die); }
+
+public:
+  DieToRoll(Die die, int amount) {
+    this->amount = amount < 0 ? 0 : amount;
+    this->die = die;
+  }
+
+  vector<int> resolve() {
+    vector<int> results;
+    for (int i{0}; i < amount; i++) {
+      int res = this->roll();
+      results.push_back(res);
+    }
+    return results;
+  }
 };
 
-int random_int(int max) { return ((double)rand()/RAND_MAX) * max; }
-
-void process_arguments(int argc, char *argv[], int* dice_to_roll) {
-	int index = 1; 
-	while(index < argc) {
-		string result = (string) argv[index];
-		char *output;
-		int next = (int) strtol(argv[index+1], &output, 10);
-		if(*output) { printf("error with %d\n", index); }
-		if(result == "-d4") { dice_to_roll[0] = next; }
-		if(result == "-d6") { dice_to_roll[1] = next; }
-		if(result == "-d8") { dice_to_roll[2] = next; }
-		if(result == "-d10") { dice_to_roll[3] = next; }
-		if(result == "-d12") { dice_to_roll[4] = next; }
-		if(result == "-d20") { dice_to_roll[5] = next; }
-		if (result == "-d100") { dice_to_roll[6] = next; }
-		index += 2;
-	}
-	return;
+Die str_to_die(string die_str) {
+  if (die_str.compare("-d4") == 0) {
+    return Die::D4;
+  }
+  if (die_str.compare("-d6") == 0) {
+    return Die::D6;
+  }
+  if (die_str.compare("-d8") == 0) {
+    return Die::D8;
+  }
+  if (die_str.compare("-d10") == 0) {
+    return Die::D10;
+  }
+  if (die_str.compare("-d12") == 0) {
+    return Die::D12;
+  }
+  if (die_str.compare("-d20") == 0) {
+    return Die::D20;
+  }
+  if (die_str.compare("-d100") == 0) {
+    return Die::D100;
+  }
+  return Die::D6;
 }
 
-int roll_dice(DIE_TYPE type, int number_of_times) {
-	int total = 0;
-	for(int i = number_of_times; i > 0; i--) {
-		int roll = random_int(type);
-		total += roll;
-		cout << roll << ((i == 1) ? " " : ", ");
-	}
-	cout << "total for d" << type << ": " << total << endl;
-	return total;
+string die_to_string(Die die) {
+  switch (die) {
+  case Die::D4:
+    return "D4";
+    break;
+  case Die::D6:
+    return "D6";
+    break;
+  case Die::D8:
+    return "D8";
+    break;
+  case Die::D10:
+    return "D10";
+    break;
+  case Die::D12:
+    return "D12";
+    break;
+  case Die::D20:
+    return "D20";
+    break;
+  case Die::D100:
+    return "D100";
+    break;
+  }
+  return "unknown";
 }
 
-void complete_roll_dice(int* dice_to_roll) {
-	int index = 0;
-	int total = 0;
-	while(index < NUMBER_OF_DICE) {
-		int number_to_roll = dice_to_roll[index];
-		if(number_to_roll == 0) { 
-			index ++;
-			continue; 
-		}
-		switch (index) {
-		case 0:
-			total += roll_dice(DIE4, number_to_roll);
-			break;
-		case 1:
-			total += roll_dice(DIE6, number_to_roll);
-			break;
-		case 2:
-			total += roll_dice(DIE8, number_to_roll);
-			break;
-		case 3:
-			total += roll_dice(DIE10, number_to_roll);
-			break;
-		case 4:
-			total += roll_dice(DIE12, number_to_roll);
-			break;
-		case 5:
-			total += roll_dice(DIE20, number_to_roll);
-			break;
-		case 6:
-			total += roll_dice(DIE100, number_to_roll);
-			break;
-		default:
-			printf("error\n");
-			break;
-		}
-		index++;
-	}
-	cout << "total roll: " << total << "\n" << endl;
+int print_rolls(vector<int> results) {
+  int total;
+  cout << "rolls: ";
+  for (auto i{results.begin()}; i != results.end(); ++i) {
+    cout << " [" << *i << "] ";
+    total += *i;
+  }
+  cout << "\ntotal: " << total << endl;
+  return total;
 }
 
 int main(int argc, char *argv[]) {
-	if(argc <= 1 || argc > MAX_ARGUMENTS) {
-		printf("need dice to roll");
-		return 1;
-	}
-	int dice_to_roll[NUMBER_OF_DICE]{0};
-	process_arguments(argc, argv, dice_to_roll);
-	complete_roll_dice(dice_to_roll);
+  int total;
+  for (int i{1}; i < argc; i += 2) {
+    Die die = str_to_die(argv[i]);
+    int amount = atoi(argv[i + 1]);
+    DieToRoll roll = DieToRoll(die, amount);
+    cout << die_to_string(roll.die) << ":" << endl;
+    total += print_rolls(roll.resolve());
+    cout << endl;
+  }
+  // more than one die type selected
+  if (argc > 3)
+    cout << "Grand total: " << total << endl;
+  return 0;
 }
